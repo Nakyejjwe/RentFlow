@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RentFlow">
+<meta name="description" content="Tenant & Payment Manager">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>RentFlow — Tenant & Payment Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink2: #2d2d44;
+    --gold: #c9a84c;
+    --gold-light: #f0d98a;
+    --cream: #faf8f3;
+    --white: #ffffff;
+    --border: #e8e3d8;
+    --muted: #8a8580;
+    --success: #2d7a4f;
+    --danger: #c0392b;
+    --shadow: 0 4px 24px rgba(26,26,46,0.10);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; padding-bottom: 80px; }
+
+  /* HEADER */
+  .app-header {
+    background: var(--ink); color: var(--white);
+    padding: 0 20px; display: flex; align-items: center;
+    justify-content: space-between; height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .app-logo { font-family: 'DM Serif Display', serif; font-size: 1.4rem; }
+  .app-logo span { color: var(--gold); }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; z-index: 100;
+    box-shadow: 0 -4px 20px rgba(26,26,46,0.08);
+  }
+  .bottom-nav button {
+    flex: 1; border: none; background: none; padding: 10px 4px 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.7rem;
+    color: var(--muted); cursor: pointer; display: flex;
+    flex-direction: column; align-items: center; gap: 3px;
+    transition: color .2s;
+  }
+  .bottom-nav button .nav-icon { font-size: 1.3rem; }
+  .bottom-nav button.active { color: var(--gold); font-weight: 600; }
+
+  /* MAIN */
+  .main { padding: 16px; max-width: 700px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    padding: 20px; margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: 'DM Serif Display', serif; font-size: 1.15rem;
+    margin-bottom: 16px; color: var(--ink);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .badge {
+    background: var(--gold); color: var(--ink);
+    font-family: 'DM Sans', sans-serif; font-size: 0.65rem;
+    font-weight: 700; padding: 2px 8px; border-radius: 20px;
+  }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .stat-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+  .stat-value { font-family: 'DM Serif Display', serif; font-size: 1.35rem; color: var(--ink); line-height: 1.2; }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.green { color: var(--success); }
+  .stat-value.red { color: var(--danger); }
+
+  /* FORM */
+  .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  input, select, textarea {
+    padding: 11px 13px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; color: var(--ink); background: var(--cream);
+    transition: border .2s; outline: none; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); background: var(--white); }
+  input[readonly] { background: #f0ede8; color: var(--muted); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 12px 20px; border-radius: 10px; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+    font-weight: 600; cursor: pointer; transition: all .2s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--ink); color: var(--white); }
+  .btn-primary:active { background: var(--ink2); transform: scale(0.98); }
+  .btn-gold { background: var(--gold); color: var(--ink); }
+  .btn-ghost { background: var(--cream); color: var(--ink); border: 1.5px solid var(--border); }
+  .btn-danger { background: #fdf0ef; color: var(--danger); border: 1.5px solid #f5c6c1; }
+  .btn-sm { padding: 7px 13px; font-size: 0.78rem; border-radius: 8px; }
+  .btn-whatsapp { background: #25D366; color: white; }
+  .btn-block { width: 100%; justify-content: center; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  thead { background: var(--ink); color: var(--white); }
+  th { padding: 10px 12px; text-align: left; font-weight: 500; font-size: 0.72rem; letter-spacing: 0.3px; white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--cream); }
+
+  /* STATUS */
+  .status-badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+  .status-paid { background: #d4edda; color: var(--success); }
+  .status-partial { background: #fff3cd; color: #856404; }
+  .status-unpaid { background: #f8d7da; color: var(--danger); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,26,46,0.65); z-index: 200;
+    align-items: flex-end; justify-content: center; padding: 0;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 24px 24px 0 0;
+    width: 100%; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-actions {
+    display: flex; gap: 8px; padding: 16px 20px 28px;
+    border-top: 1px solid var(--border); flex-wrap: wrap;
+  }
+
+  /* RECEIPT */
+  #receipt-content { padding: 28px 28px 16px; font-family: 'DM Sans', sans-serif; }
+  .receipt-header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px dashed var(--border); }
+  .receipt-logo { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: var(--ink); }
+  .receipt-logo span { color: var(--gold); }
+  .receipt-sub { font-size: 0.75rem; color: var(--muted); }
+  .receipt-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; text-align: center; color: var(--ink); margin-bottom: 16px; letter-spacing: 1px; text-transform: uppercase; }
+  .receipt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; font-size: 0.8rem; }
+  .rl { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.3px; display: block; }
+  .rv { font-weight: 600; color: var(--ink); display: block; }
+  .receipt-divider { border: none; border-top: 1px dashed var(--border); margin: 14px 0; }
+  .receipt-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.85rem; }
+  .receipt-row.total { border-top: 2px solid var(--ink); margin-top: 6px; padding-top: 8px; font-weight: 700; font-size: 0.95rem; }
+  .receipt-row.paid { color: var(--success); font-weight: 600; }
+  .receipt-row.balance { color: var(--danger); font-weight: 600; }
+  .receipt-stamp { display: inline-block; border: 3px solid var(--success); color: var(--success); padding: 5px 16px; border-radius: 6px; font-weight: 700; font-size: 0.9rem; letter-spacing: 3px; transform: rotate(-8deg); margin: 10px 0; }
+  .receipt-footer { text-align: center; margin-top: 16px; padding-top: 14px; border-top: 2px dashed var(--border); font-size: 0.72rem; color: var(--muted); line-height: 1.7; }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 36px 16px; color: var(--muted); }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+  .empty-state p { font-size: 0.85rem; }
+
+  /* INSTALL BANNER */
+  .install-banner {
+    background: linear-gradient(135deg, var(--ink), var(--ink2));
+    color: white; padding: 14px 16px; margin-bottom: 16px;
+    border-radius: 14px; display: flex; align-items: center;
+    gap: 12px; cursor: pointer;
+  }
+  .install-banner .ib-text { flex: 1; }
+  .install-banner .ib-title { font-weight: 600; font-size: 0.9rem; }
+  .install-banner .ib-sub { font-size: 0.75rem; opacity: 0.7; margin-top: 2px; }
+  .install-banner .ib-icon { font-size: 2rem; }
+
+  @media(max-width: 380px) {
+    .form-row { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-logo">Rent<span>Flow</span></div>
+  <button class="btn btn-gold btn-sm" onclick="showTab('payments')">+ Payment</button>
+</header>
+
+<div class="main">
+
+  <!-- ── DASHBOARD ── -->
+  <div id="tab-dashboard" class="section active">
+    <div id="install-banner" class="install-banner" style="display:none" onclick="installApp()">
+      <div class="ib-icon">📲</div>
+      <div class="ib-text">
+        <div class="ib-title">Install RentFlow App</div>
+        <div class="ib-sub">Add to home screen for offline use</div>
+      </div>
+      <span>›</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Tenants</div><div class="stat-value" id="stat-tenants">0</div></div>
+      <div class="stat-card"><div class="stat-label">Monthly Expected</div><div class="stat-value gold" id="stat-expected">UGX 0</div></div>
+      <div class="stat-card"><div class="stat-label">This Month Collected</div><div class="stat-value green" id="stat-collected">UGX 0</div></div>
+      <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-value red" id="stat-outstanding">UGX 0</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent Payments</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tenant</th><th>Month</th><th>Paid</th><th>Status</th><th></th></tr></thead>
+          <tbody id="recent-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TENANTS ── -->
+  <div id="tab-tenants" class="section">
+    <div class="card">
+      <div class="card-title">Add Tenant <span class="badge">NEW</span></div>
+      <div class="form-row">
+        <div class="form-group"><label>Full Name *</label><input id="t-name" placeholder="e.g. Nalwanga Sarah"></div>
+        <div class="form-group"><label>Unit / Room *</label><input id="t-unit" placeholder="e.g. A3"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Phone Number 1 *</label><input id="t-phone1" type="tel" placeholder="+256 7XX XXX XXX"></div>
+        <div class="form-group"><label>Phone Number 2</label><input id="t-phone2" type="tel" placeholder="+256 7XX XXX XXX"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Monthly Rent (UGX) *</label><input id="t-rent" type="number" placeholder="e.g. 300000"></div>
+        <div class="form-group"><label>Due Day</label><input id="t-dueday" type="number" value="5" min="1" max="31"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Move-in Date *</label><input id="t-movein" type="date"></div>
+        <div class="form-group"><label>Deposit (UGX)</label><input id="t-deposit" type="number" placeholder="e.g. 300000"></div>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="t-notes" placeholder="Any notes about this tenant..."></textarea></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addTenant()">💾 Save Tenant</button>
+        <button class="btn btn-ghost" onclick="clearTenantForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">All Tenants</div>
+      <div id="tenants-list"></div>
+    </div>
+  </div>
+
+  <!-- ── PAYMENTS ── -->
+  <div id="tab-payments" class="section">
+    <div class="card">
+      <div class="card-title">Record Payment</div>
+      <div class="form-group"><label>Tenant *</label>
+        <select id="p-tenant" onchange="populateRent()"><option value="">— Select Tenant —</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Payment Month *</label><input id="p-month" type="month"></div>
+        <div class="form-group"><label>Payment Date *</label><input id="p-date" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Monthly Rent</label><input id="p-rent" type="number" readonly placeholder="Auto-filled"></div>
+        <div class="form-group"><label>Arrears (UGX)</label><input id="p-arrears" type="number" value="0" oninput="calcBalance()"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Amount Paid (UGX) *</label><input id="p-amount" type="number" placeholder="Enter amount" oninput="calcBalance()"></div>
+        <div class="form-group"><label>Balance Due</label><input id="p-balance" readonly placeholder="Auto-calculated"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Payment Method</label>
+          <select id="p-method">
+            <option>Mobile Money (MTN)</option>
+            <option>Mobile Money (Airtel)</option>
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Cheque</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Receipt No.</label><input id="p-ref" readonly></div>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="p-notes" placeholder="e.g. MoMo TXN ID: 123456"></textarea></div>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-block" onclick="recordPayment()">💳 Record & Issue Receipt</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Payment History</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ref</th><th>Tenant</th><th>Month</th><th>Paid</th><th>Balance</th><th>Status</th><th></th></tr></thead>
+          <tbody id="payments-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="active" onclick="showTab('dashboard')">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button onclick="showTab('tenants')">
+    <span class="nav-icon">👤</span>Tenants
+  </button>
+  <button onclick="showTab('payments')">
+    <span class="nav-icon">💳</span>Payments
+  </button>
+</nav>
+
+<!-- RECEIPT MODAL -->
+<div class="modal-overlay" id="receipt-modal">
+  <div class="modal">
+    <div id="receipt-content"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="downloadReceiptPDF()" style="flex:1">⬇️ Save PDF</button>
+      <button class="btn btn-whatsapp" onclick="shareWhatsApp()" style="flex:1">📲 WhatsApp</button>
+      <button class="btn btn-ghost btn-block" onclick="closeReceipt()">✕ Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let tenants = JSON.parse(localStorage.getItem('rf_tenants') || '[]');
+let payments = JSON.parse(localStorage.getItem('rf_payments') || '[]');
+let currentReceipt = null;
+let deferredPrompt = null;
+
+// ─── PWA INSTALL ─────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'flex';
+});
+function installApp() {
+  if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; document.getElementById('install-banner').style.display = 'none'; }
+}
+
+// ─── TABS ────────────────────────────────────────────────
+function showTab(tab) {
+  ['dashboard','tenants','payments'].forEach((t,i) => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.querySelectorAll('.bottom-nav button')[i].classList.toggle('active', t===tab);
+  });
+  if (tab==='dashboard') renderDashboard();
+  if (tab==='tenants') renderTenants();
+  if (tab==='payments') { renderPayments(); renderTenantSelect(); }
+}
+
+// ─── HELPERS ─────────────────────────────────────────────
+function save() {
+  localStorage.setItem('rf_tenants', JSON.stringify(tenants));
+  localStorage.setItem('rf_payments', JSON.stringify(payments));
+}
+function ugx(n) { return 'UGX ' + Number(n||0).toLocaleString(); }
+function genRef() { return 'RF-' + Date.now().toString().slice(-7); }
+function fmtMonth(m) {
+  if (!m) return '';
+  const [y,mo] = m.split('-');
+  return new Date(y, mo-1).toLocaleString('default', {month:'long', year:'numeric'});
+}
+function fmtDate(d) {
+  if (!d) return '';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+}
+function ordinal(n) { const s=['th','st','nd','rd'],v=n%100; return s[(v-20)%10]||s[v]||s[0]; }
+
+// ─── TENANTS ─────────────────────────────────────────────
+function addTenant() {
+  const name=document.getElementById('t-name').value.trim();
+  const unit=document.getElementById('t-unit').value.trim();
+  const phone1=document.getElementById('t-phone1').value.trim();
+  const rent=document.getElementById('t-rent').value;
+  const movein=document.getElementById('t-movein').value;
+  if (!name||!unit||!phone1||!rent||!movein) { alert('Please fill all required (*) fields'); return; }
+  tenants.push({
+    id: Date.now().toString(), name, unit, phone1,
+    phone2: document.getElementById('t-phone2').value.trim(),
+    rent: Number(rent), movein,
+    deposit: Number(document.getElementById('t-deposit').value||0),
+    dueDay: Number(document.getElementById('t-dueday').value||5),
+    notes: document.getElementById('t-notes').value.trim(),
+  });
+  save(); clearTenantForm(); renderTenants(); renderDashboard();
+  alert('✅ Tenant "'+name+'" saved!');
+}
+function deleteTenant(id) {
+  if (!confirm('Remove this tenant?')) return;
+  tenants = tenants.filter(t=>t.id!==id);
+  save(); renderTenants(); renderDashboard();
+}
+function clearTenantForm() {
+  ['t-name','t-unit','t-phone1','t-phone2','t-rent','t-movein','t-deposit','t-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-dueday').value='5';
+}
+function renderTenants() {
+  const el = document.getElementById('tenants-list');
+  if (!tenants.length) { el.innerHTML='<div class="empty-state"><div class="icon">🏠</div><p>No tenants yet. Add one above.</p></div>'; return; }
+  el.innerHTML = tenants.map(t=>`
+    <div style="padding:14px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <div>
+        <div style="font-weight:600;font-size:0.95rem">${t.name}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px">${t.unit} · ${ugx(t.rent)}/mo · Due ${t.dueDay}${ordinal(t.dueDay)}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:1px">📞 ${t.phone1}${t.phone2?' · '+t.phone2:''}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteTenant('${t.id}')">🗑</button>
+    </div>
+  `).join('');
+}
+
+// ─── PAYMENTS ────────────────────────────────────────────
+function renderTenantSelect() {
+  const sel=document.getElementById('p-tenant');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Select Tenant —</option>'+
+    tenants.map(t=>`<option value="${t.id}"${t.id===cur?' selected':''}>${t.name} (${t.unit})</option>`).join('');
+}
+function populateRent() {
+  const t=tenants.find(x=>x.id===document.getElementById('p-tenant').value);
+  document.getElementById('p-rent').value=t?t.rent:'';
+  document.getElementById('p-ref').value=genRef();
+  calcBalance();
+}
+function calcBalance() {
+  const rent=Number(document.getElementById('p-rent').value||0);
+  const paid=Number(document.getElementById('p-amount').value||0);
+  const arrears=Number(document.getElementById('p-arrears').value||0);
+  const bal=rent+arrears-paid;
+  const el=document.getElementById('p-balance');
+  el.value=bal>0?ugx(bal)+' DUE':bal<0?ugx(Math.abs(bal))+' CREDIT':'FULLY PAID ✓';
+  el.style.color=bal>0?'var(--danger)':'var(--success)';
+}
+function recordPayment() {
+  const tid=document.getElementById('p-tenant').value;
+  const month=document.getElementById('p-month').value;
+  const amount=document.getElementById('p-amount').value;
+  const date=document.getElementById('p-date').value;
+  if (!tid||!month||!amount||!date) { alert('Please fill all required (*) fields'); return; }
+  const tenant=tenants.find(t=>t.id===tid);
+  const rent=Number(document.getElementById('p-rent').value||tenant.rent);
+  const arrears=Number(document.getElementById('p-arrears').value||0);
+  const paid=Number(amount);
+  const balance=rent+arrears-paid;
+  const ref=document.getElementById('p-ref').value||genRef();
+  const pmt={
+    id:Date.now().toString(), ref, tid,
+    tenantName:tenant.name, unit:tenant.unit,
+    phone1:tenant.phone1, phone2:tenant.phone2,
+    month, rent, arrears, paid, balance,
+    method:document.getElementById('p-method').value,
+    date, notes:document.getElementById('p-notes').value.trim(),
+    status:balance<=0?'paid':paid>0?'partial':'unpaid',
+  };
+  payments.unshift(pmt);
+  save(); clearPaymentForm(); renderPayments(); renderDashboard();
+  showReceipt(pmt);
+}
+function clearPaymentForm() {
+  ['p-tenant','p-month','p-rent','p-amount','p-balance','p-ref','p-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-arrears').value='0';
+  document.getElementById('p-method').selectedIndex=0;
+  document.getElementById('p-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('p-ref').value=genRef();
+}
+function renderPayments() {
+  const tbody=document.getElementById('payments-body');
+  const recent=document.getElementById('recent-body');
+  if (!payments.length) {
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="icon">💳</div><p>No payments yet.</p></div></td></tr>';
+    if(recent) recent.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="icon">📋</div><p>No payments yet.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=payments.map(p=>`
+    <tr>
+      <td><strong>${p.ref}</strong></td>
+      <td>${p.tenantName}</td>
+      <td style="white-space:nowrap">${fmtMonth(p.month)}</td>
+      <td style="color:var(--success);font-weight:600">${ugx(p.paid)}</td>
+      <td style="color:${p.balance>0?'var(--danger)':'var(--success)'}; font-weight:600">${p.balance>0?ugx(p.balance):'—'}</td>
+      <td><span class="status-badge status-${p.status}">${p.status.toUpperCase()}</span></td>
+      <td><button class="btn btn-sm btn-ghost" onclick='showReceipt(payments.find(x=>x.id==="${p.id}"))'>🧾</button></td>
+    </tr>
+  `).join('');
+  if(recent) recent.innerHTML=payments.slice(0,6).map(p=>`
+    <tr>
+      <td><strong>${p.tenantName}</strong><br><span style="font-size:0.72rem;color:var(--muted)">${p.unit}</span></td>
+      <td style="white-space:nowrap">${fmtMonth(p.month)}</td>
+      <td style="color:var(--success);font-weight:600">${ugx(p.paid)}</td>
+      <td><span class="status-badge status-${p.status}">${p.status.toUpperCase()}</span></td>
+      <td><button class="btn btn-sm btn-ghost" onclick='showReceipt(payments.find(x=>x.id==="${p.id}"))'>🧾</button></td>
+    </tr>
+  `).join('');
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────
+function renderDashboard() {
+  document.getElementById('stat-tenants').textContent=tenants.length;
+  document.getElementById('stat-expected').textContent=ugx(tenants.reduce((s,t)=>s+t.rent,0));
+  const now=new Date();
+  const thisMonth=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const mp=payments.filter(p=>p.month===thisMonth);
+  document.getElementById('stat-collected').textContent=ugx(mp.reduce((s,p)=>s+p.paid,0));
+  document.getElementById('stat-outstanding').textContent=ugx(mp.reduce((s,p)=>s+(p.balance>0?p.balance:0),0));
+  renderPayments();
+}
+
+// ─── RECEIPT ─────────────────────────────────────────────
+function showReceipt(pmt) {
+  if(!pmt) return;
+  currentReceipt=pmt;
+  const total=pmt.rent+pmt.arrears;
+  document.getElementById('receipt-content').innerHTML=`
+    <div id="receipt-content">
+    <div class="receipt-header">
+      <div class="receipt-logo">Rent<span>Flow</span></div>
+      <div class="receipt-sub">Tenant Payment Management</div>
+    </div>
+    <div class="receipt-title">Payment Receipt</div>
+    <div class="receipt-meta">
+      <div><span class="rl">Receipt No.</span><span class="rv">${pmt.ref}</span></div>
+      <div><span class="rl">Date</span><span class="rv">${fmtDate(pmt.date)}</span></div>
+      <div><span class="rl">Tenant</span><span class="rv">${pmt.tenantName}</span></div>
+      <div><span class="rl">Unit</span><span class="rv">${pmt.unit}</span></div>
+      <div><span class="rl">Phone 1</span><span class="rv">${pmt.phone1||'—'}</span></div>
+      <div><span class="rl">Phone 2</span><span class="rv">${pmt.phone2||'—'}</span></div>
+      <div><span class="rl">Period</span><span class="rv">${fmtMonth(pmt.month)}</span></div>
+      <div><span class="rl">Method</span><span class="rv">${pmt.method}</span></div>
+    </div>
+    <hr class="receipt-divider">
+    <div>
+      <div class="receipt-row"><span>Monthly Rent</span><span>${ugx(pmt.rent)}</span></div>
+      ${pmt.arrears>0?`<div class="receipt-row" style="color:var(--danger)"><span>Arrears</span><span>${ugx(pmt.arrears)}</span></div>`:''}
+      <div class="receipt-row total"><span>TOTAL DUE</span><span>${ugx(total)}</span></div>
+      <div class="receipt-row paid"><span>✓ Amount Paid</span><span>${ugx(pmt.paid)}</span></div>
+      <div class="receipt-row ${pmt.balance>0?'balance':'paid'}">
+        <span>${pmt.balance>0?'⚠ Balance Remaining':'✓ Fully Settled'}</span>
+        <span>${pmt.balance>0?ugx(pmt.balance):'UGX 0'}</span>
+      </div>
+    </div>
+    ${pmt.balance<=0?'<div style="text-align:center;margin-top:14px"><div class="receipt-stamp">PAID IN FULL</div></div>':''}
+    ${pmt.notes?`<hr class="receipt-divider"><p style="font-size:0.78rem;color:var(--muted)"><strong>Notes:</strong> ${pmt.notes}</p>`:''}
+    <div class="receipt-footer">
+      <p>Thank you for your payment. Keep this receipt for your records.</p>
+      <p style="margin-top:4px">Generated by <strong>RentFlow</strong> · ${new Date().toLocaleString()}</p>
+    </div>
+    </div>
+  `;
+  document.getElementById('receipt-modal').classList.add('open');
+}
+function closeReceipt() { document.getElementById('receipt-modal').classList.remove('open'); }
+function downloadReceiptPDF() {
+  const el=document.getElementById('receipt-content');
+  html2pdf().from(el).set({
+    margin:0.5,
+    filename:`Receipt_${currentReceipt.ref}_${currentReceipt.tenantName.replace(/\s+/g,'_')}.pdf`,
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:2},
+    jsPDF:{unit:'in',format:'a5',orientation:'portrait'}
+  }).save();
+}
+function shareWhatsApp() {
+  const p=currentReceipt;
+  const msg=
+    `🧾 *PAYMENT RECEIPT — RentFlow*\n`+
+    `━━━━━━━━━━━━━━━━\n`+
+    `📋 Receipt: *${p.ref}*\n`+
+    `📅 Date: ${fmtDate(p.date)}\n`+
+    `👤 Tenant: *${p.tenantName}*\n`+
+    `🏠 Unit: ${p.unit}\n`+
+    `📅 Period: ${fmtMonth(p.month)}\n`+
+    `━━━━━━━━━━━━━━━━\n`+
+    `🏷 Rent: ${ugx(p.rent)}\n`+
+    (p.arrears>0?`⚠ Arrears: ${ugx(p.arrears)}\n`:'')+
+    `💰 Total Due: ${ugx(p.rent+p.arrears)}\n`+
+    `✅ Paid: *${ugx(p.paid)}*\n`+
+    `${p.balance>0?`⚠ Balance: *${ugx(p.balance)}*`:`✅ Status: *FULLY PAID*`}\n`+
+    `━━━━━━━━━━━━━━━━\n`+
+    `💳 Via: ${p.method}\n`+
+    (p.notes?`📝 ${p.notes}\n`:'')+
+    `\n_Thank you for your payment! — RentFlow_`;
+  const phone=(p.phone1||'').replace(/\D/g,'');
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+(function(){
+  const now=new Date();
+  document.getElementById('p-date').value=now.toISOString().split('T')[0];
+  document.getElementById('p-month').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('p-ref').value=genRef();
+  renderDashboard(); renderTenants(); renderTenantSelect();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+})();
+</script>
+</body>
+</html>
